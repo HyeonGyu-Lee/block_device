@@ -38,14 +38,16 @@ void msgCallback(const block_device::LD_data::ConstPtr& msg) {
   
 int main(int argc, char **argv)
 {
-  char Node_name[20];
+  char Node_name[20], Msg_name[20];
   char* device_name = getenv("HOSTNAME");
   strcpy(Node_name, "block_device_");
+  strcpy(Msg_name, device_name);
   strcat(Node_name,device_name);
+  strcat(Msg_name, "_msg");
   ros::init(argc, argv, Node_name);
   ROS_INFO("ROS init Node : %s",Node_name);
   ros::NodeHandle nh;
-  ros::Subscriber LD_sub = nh.subscribe("LD_data_msg",100,msgCallback);
+  ros::Subscriber LD_sub = nh.subscribe(Msg_name,100,msgCallback);
   ros::spin();
 //  block_device::LoadDeviceNode nh;
 //  nh.init(device_name);
