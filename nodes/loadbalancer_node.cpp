@@ -6,51 +6,65 @@
 #include <pthread.h>
 #include <loadbalancer/loadbalancer.h>
 #include "block_device/LD_data.h"
+#include "block_device/LD_set.h"
+#include "block_device/LD_connect.h"
 
 using namespace std;
-/*namespace Load_Balancer {
+
+namespace LoadBalancer {
 
 class LoadControlNode
 {
   public:
     ros::NodeHandle nh_;
+    ros::Subscriber LD_sub_;
+    ros::ServiceServer LD_server_;
+    vector<ros::Publisher> pub_list_;
+    vector<string> node_list_;
+    int cnt_;
+    
+    bool spin(void) {
+      LD_server_ = nh_.advertiseService("LD_set", &LoadControlNode::connection_check, this);
+      cnt_ = 0;
+      block_device::LD_data msg;
+      ros::Rate loop_rate(5);
+      int i;
+      while(nh_.ok()){
+	if(cnt_ != 0) {
+          msg.id = i%cnt_;
+	  msg.stamp = ros::Time::now();
+	  msg.data = i++;
+          ROS_INFO("%s :: send msg = %d",node_list_.at(msg.id).c_str(), msg.data);
+          pub_list_.at(msg.id).publish(msg);
+	}
+	ros::spinOnce();
+        loop_rate.sleep();
+      }
+    }
+
+    bool connection_check(block_device::LD_connect::Request &req, block_device::LD_connect::Response &res){
+      ++cnt_;
+      res.id = cnt_;
+      ROS_INFO("[%d] %s request connection...", res.id, req.node_name.c_str());
+      ros::Publisher LD_pub = nh_.advertise<block_device::LD_data>(req.msg_name.c_str(), 10);
+      pub_list_.push_back(LD_pub);
+      node_list_.push_back(req.node_name);
+      ROS_INFO("register LD node : Connected %d nodes", cnt_);
+
+      return true;
+    }
+
 };
 
-}*/
+}
 
 int main(int argc, char **argv)
 {
-  ros::init(argc,argv,"LoadBalancer");
-  ROS_INFO("LoadBalancer Start");
-  ros::NodeHandle nh;
-  ros::Publisher LD1_pub = nh.advertise<block_device::LD_data>("LD1_msg",100);
-  ros::Publisher LD2_pub = nh.advertise<block_device::LD_data>("LD2_msg",100);
-  ros::Publisher LD3_pub = nh.advertise<block_device::LD_data>("LD3_msg",100);
-  ros::Publisher LD4_pub = nh.advertise<block_device::LD_data>("LD4_msg",100);
-  vector<ros::Publisher> pub_list;
-  pub_list.push_back(LD1_pub);
-  pub_list.push_back(LD2_pub);
-  pub_list.push_back(LD3_pub);
-  pub_list.push_back(LD4_pub);
-  
-  block_device::LD_data msg;
-  ros::Rate loop_rate(10);
-  int cnt=0;
+  ros::init(argc, argv, "LoadBalancer");
+  ROS_INFO("LoadBalancer operation");
+ 
+  LoadBalancer::LoadControlNode nh;
+  nh.spin();
 
-  while(ros::ok())
-  {
-    msg.id=cnt%4;
-    msg.stamp=ros::Time::now();
-    msg.data=cnt;
-
-    ROS_INFO("LD%d :: send msg = %d (%d.%d)",msg.id+1, msg.data, msg.stamp.sec, msg.stamp.nsec);
-//    pthread_create();
-    pub_list.at(msg.id).publish(msg);
-//    pthread_join();
-
-    loop_rate.sleep();
-    cnt++;
-  }
-  
   return EXIT_SUCCESS;
 }

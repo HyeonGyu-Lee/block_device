@@ -4,53 +4,75 @@
 #include <ros/ros.h>
 #include <block_device/block_device.h>
 #include "block_device/LD_data.h"
+#include "block_device/LD_set.h"
+#include "block_device/LD_connect.h"
 
-/*namespace block_device {
+using namespace std;
+
+namespace block_device {
 
 class LoadDeviceNode
 {
   public:
-    ros::NodeHandle node_;
+    ros::NodeHandle nh_;
     ros::Subscriber LD_sub_;
+    ros::Publisher LD_pub_;
+    ros::ServiceClient LD_client_;
     LoadDevice device_;
-    int result_;
-    void init(void){
-      LD_sub_ = node_.subscribe("LD_data_msg",10,LoadDeviceNode::msgCallback);
-    };
-    bool spin() {
-      while(node_.ok())
-      {
-        ros::spinOnce();
-      }
-      return true;
+    string Node_name_, Msg_name_;
+
+    void init(string Node_str, string Msg_str){
+      Node_name_ = Node_str;
+      Msg_name_ = Msg_str;
     }
-   void msgCallback(const block_device::LD_data::ConstPtr& msg) {
-     ROS_INFO("recieve msg = %d", msg->data);
-   }
+
+    bool spin(void) {
+      LD_client_ = nh_.serviceClient<block_device::LD_connect>("LD_set");
+      block_device::LD_connect check;
+
+      check.request.node_name = Node_name_;
+      check.request.msg_name = Msg_name_;
+
+      if(LD_client_.call(check)) {
+        ROS_INFO("%s wake up ..., setting msg : %s",check.request.node_name.c_str(),check.request.msg_name.c_str());
+	ROS_INFO("You are node [%d]", check.response.id);
+	LD_sub_ = nh_.subscribe(Msg_name_,1000, &LoadDeviceNode::msgCallback, this);
+        ros::Rate loop_rate(500);	    
+        while(nh_.ok())
+        {
+          ros::spinOnce();
+	  loop_rate.sleep();
+        }
+      }else{
+        ROS_ERROR("Failed to connect");
+	return -1;
+      }
+
+      return 0;
+    }
+
+    void msgCallback(const block_device::LD_data::ConstPtr& msg) {
+      ROS_INFO("recieve msg = %d", msg->data);
+    }
    
 };
 
-}*/
-
-void msgCallback(const block_device::LD_data::ConstPtr& msg) {
-  ROS_INFO("recieve msg = %d", msg->data);
 }
   
 int main(int argc, char **argv)
 {
-  char Node_name[20], Msg_name[20];
-  char* device_name = getenv("HOSTNAME");
-  strcpy(Node_name, "block_device_");
-  strcpy(Msg_name, device_name);
-  strcat(Node_name,device_name);
-  strcat(Msg_name, "_msg");
+  string device_name, Node_name, Msg_name;
+  device_name = getenv("HOSTNAME");
+  Node_name = "block_device_" + device_name;
+  Msg_name = device_name + "_msg";
+      
   ros::init(argc, argv, Node_name);
-  ROS_INFO("ROS init Node : %s",Node_name);
-  ros::NodeHandle nh;
-  ros::Subscriber LD_sub = nh.subscribe(Msg_name,100,msgCallback);
-  ros::spin();
-//  block_device::LoadDeviceNode nh;
-//  nh.init(device_name);
-//  nh.spin();
+  ROS_INFO("SETTING NODE : %s", Node_name.c_str());
+ 
+  block_device::LoadDeviceNode nh;
+
+  nh.init(Node_name, Msg_name);
+  nh.spin();
+
   return EXIT_SUCCESS;
 }
