@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  darknet_ros
 )
 
 ################################################
@@ -18,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   LD_data.msg
+  LD_check.msg
 )
 
 ## Generate services in the 'srv' folder
