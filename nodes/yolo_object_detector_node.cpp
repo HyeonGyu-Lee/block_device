@@ -7,10 +7,17 @@
  */
 
 #include <ros/ros.h>
+#include <stdio.h>
+#include <string.h>
 #include <darknet_ros/YoloObjectDetector.hpp>
 
+using namespace std;
+
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "darknet_ros");
+  string device_name, Node_name;
+  device_name = getenv("HOSTNAME");
+  Node_name = "darknet_ros_"+device_name;
+  ros::init(argc, argv, "darknet_ros" );
   ros::NodeHandle nodeHandle("~");
   darknet_ros::YoloObjectDetector yoloObjectDetector(nodeHandle);
 

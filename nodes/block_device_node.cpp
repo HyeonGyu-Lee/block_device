@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ros/ros.h>
+#include <darknet_ros/YoloObjectDetector.hpp>
 #include <block_device/block_device.h>
 #include "block_device/LD_data.h"
 #include "block_device/LD_set.h"
@@ -65,10 +66,12 @@ int main(int argc, char **argv)
   device_name = getenv("HOSTNAME");
   Node_name = "block_device_" + device_name;
   Msg_name = device_name + "_msg";
-      
+   
   ros::init(argc, argv, Node_name);
   ROS_INFO("SETTING NODE : %s", Node_name.c_str());
  
+  ros::NodeHandle nodeHandle("~");
+  darknet_ros::YoloObjectDetector yoloObjectDetector(nodeHandle);
   block_device::LoadDeviceNode nh;
 
   nh.init(Node_name, Msg_name);

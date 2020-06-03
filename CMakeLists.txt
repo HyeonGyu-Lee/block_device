@@ -72,12 +72,12 @@ add_definitions(-O4 -g)
 add_message_files(
   FILES
     LD_data.msg
-    LD_set.msg
 )
 
 add_service_files(
   FILES
     LD_connect.srv
+    LB_command.srv
 )
 
 #add_action_files(
@@ -173,6 +173,7 @@ set(DARKNET_CUDA_FILES
 
 set(PROJECT_LIB_FILES
     src/block_device.cpp			  src/loadbalancer.cpp
+    src/YoloObjectDetector.cpp			  src/image_interface.c
 )
 
 ###########
@@ -182,20 +183,82 @@ set(PROJECT_LIB_FILES
 cmake_host_system_information(RESULT hostname_ QUERY HOSTNAME)
 
 ## Build library
-add_executable(${PROJECT_NAME}_${hostname_} nodes/block_device_node.cpp)
-add_dependencies(${PROJECT_NAME}_${hostname_} ${${PROJECT_NAME}_EXPORTED_TARGETS}
-  ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(${PROJECT_NAME}_${hostname_}
-  ${catkin_LIBRARIES}
-)
+if (CUDA_FOUND)
+   
+  link_directories(
+    ${CUDA_TOOLKIT_ROOT_DIR}/lib64
+  )
+
+  cuda_add_library(${PROJECT_NAME}_lib
+    ${PROJECT_LIB_FILES} ${DARKNET_CORE_FILES}
+    ${DARKNET_CUDA_FILES}
+  )
+
+  target_link_libraries(${PROJECT_NAME}_lib
+    cuda
+    cudart
+    cublas
+    curand
+  )
+
+  cuda_add_executable(${PROJECT_NAME}_${hostname_}
+    nodes/block_device_node.cpp
+  )
+
+else ()
+
+  add_executable(${PROJECT_NAME}_${hostname_} nodes/block_device_node.cpp)
+  add_dependencies(${PROJECT_NAME}_${hostname_} ${${PROJECT_NAME}_EXPORTED_TARGETS}
+    ${catkin_EXPORTED_TARGETS}
+  )
+
+endif()
 
 add_executable(loadbalancer_node nodes/loadbalancer_node.cpp)
 add_dependencies(loadbalancer_node ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
 )
-target_link_libraries(loadbalancer_node
+
+target_link_libraries(${PROJECT_NAME}_lib
+  m
+  pthread
+  stdc++
+  ${Boost_LIBRARIES}
+  ${OpenCV_LIBRARIES}
   ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+)
+
+target_link_libraries(${PROJECT_NAME}_${hostname_}
+  ${PROJECT_NAME}_lib
+)
+
+target_link_libraries(loadbalancer_node
+  ${PROJECT_NAME}_lib
+)
+
+add_dependencies(${PROJECT_NAME}_lib
+  darknet_ros_msgs_generate_messages_cpp
+)
+
+install(TARGETS ${PROJECT_NAME}_lib
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS ${PROJECT_NAME}_${hostname_}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(
+  DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+)
+
+install(DIRECTORY config launch yolo_network_config
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
 # Download yolov2-tiny.weights
