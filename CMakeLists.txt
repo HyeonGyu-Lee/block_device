@@ -205,6 +205,10 @@ if (CUDA_FOUND)
     nodes/block_device_node.cpp
   )
 
+  cuda_add_executable(loadbalancer_node
+    nodes/loadbalancer_node.cpp
+  )
+
 else ()
 
   add_executable(${PROJECT_NAME}_${hostname_} nodes/block_device_node.cpp)
@@ -212,12 +216,12 @@ else ()
     ${catkin_EXPORTED_TARGETS}
   )
 
-endif()
+  add_executable(loadbalancer_node nodes/loadbalancer_node.cpp)
+  add_dependencies(loadbalancer_node ${${PROJECT_NAME}_EXPORTED_TARGETS}
+    ${catkin_EXPORTED_TARGETS}
+  )
 
-add_executable(loadbalancer_node nodes/loadbalancer_node.cpp)
-add_dependencies(loadbalancer_node ${${PROJECT_NAME}_EXPORTED_TARGETS}
-  ${catkin_EXPORTED_TARGETS}
-)
+endif()
 
 target_link_libraries(${PROJECT_NAME}_lib
   m
@@ -275,5 +279,5 @@ set(FILE "${PATH}/yolov3.weights")
 message(STATUS "Checking and downloading yolov3.weights if needed ...")
 if (NOT EXISTS "${FILE}")
   message(STATUS "... file does not exist. Downloading now ...")
-  execute_process(COMMAND wget -q https://github.com/leggedrobotics/darknet_ros/releases/download/1.1.4/yolov3.weights -P ${PATH})
+  #  execute_process(COMMAND wget -q https://github.com/leggedrobotics/darknet_ros/releases/download/1.1.4/yolov3.weights -P ${PATH})
 endif()
