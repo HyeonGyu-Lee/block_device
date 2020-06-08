@@ -9,6 +9,8 @@
 #include <string.h>
 #include <vector>
 #include <pthread.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 // ROS
 #include <ros/ros.h>
@@ -37,6 +39,7 @@ class LoadControl{
     bool connectionCallback(block_device::LD_connect::Request &req, block_device::LD_connect::Response &res);
     bool commandCallback(block_device::LB_command::Request &req, block_device::LB_command::Response &res);
     void cameraCallback(const sensor_msgs::ImageConstPtr& msg);
+    double what_time_is_it_now();
     ros::NodeHandle nodeHandle_;
     ros::Subscriber imageSub_;
     ros::ServiceServer LDServer_; // /LD_connect
@@ -46,6 +49,8 @@ class LoadControl{
     vector<string> nodeList_;
     int cnt_;
     int flag_;
+    double fps_;
+    double prevTime_;
 
 };
 

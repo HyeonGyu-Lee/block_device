@@ -1,5 +1,5 @@
 #include <loadbalancer/loadbalancer.h>
-
+#include <darknet_ros/YoloObjectDetector.hpp>
 using namespace std;
 
 namespace LoadBalancer {
@@ -31,7 +31,7 @@ void LoadControl::init(void) {
     
 void LoadControl::spin(void) {
   block_device::LD_data msg;
-  ros::Rate loop_rate(60);
+  ros::Rate loop_rate(5);
   int i;
 
   while(nodeHandle_.ok()){
@@ -98,14 +98,6 @@ void LoadControl::cameraCallback(const sensor_msgs::ImageConstPtr& msg) {
     printf("\nFPS:%.1f\n", fps_);
   }
   return;
-}
-
-double LoadControl::what_time_is_it_now(){
-  struct timeval time;
-  if(gettimeofday(&time,NULL)){
-    return 0;
-  }
-  return (double)time.tv_sec + (double)time.tv_usec * .000001;
 }
 
 }
