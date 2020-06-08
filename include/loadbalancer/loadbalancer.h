@@ -24,6 +24,9 @@
 
 // OpenCV
 #include <cv_bridge/cv_bridge.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/objdetect/objdetect.hpp>
 
 using namespace std;
 
@@ -49,6 +52,7 @@ class LoadControl{
     vector<string> nodeList_;
     int cnt_;
     int flag_;
+    int i_;
     double fps_;
     double prevTime_;
 

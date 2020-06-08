@@ -26,6 +26,7 @@ void LoadControl::init(void) {
   LBServer_ = nodeHandle_.advertiseService(LBServerTopicName, &LoadControl::commandCallback, this);
   cnt_ = 0;
   flag_ = 0;
+  i_ = 0;
   prevTime_ = what_time_is_it_now();
 }
     
@@ -35,13 +36,6 @@ void LoadControl::spin(void) {
   int i;
 
   while(nodeHandle_.ok()){
-    if((cnt_ != 0) && (flag_ == 1)) {
-      msg.id = i%cnt_;
-      msg.stamp = ros::Time::now();
-      msg.data = i++;
-      ROS_INFO("%s :: send msg = %d",nodeList_.at(msg.id).c_str(), msg.data);
-      pubList_.at(msg.id).publish(msg);
-    }
     ros::spinOnce();
     loop_rate.sleep();
   }
@@ -51,7 +45,7 @@ bool LoadControl::connectionCallback(block_device::LD_connect::Request &req, blo
   ++cnt_;
   res.id = cnt_;
   ROS_INFO("[%d] %s request connection...", res.id, req.node_name.c_str());
-  ros::Publisher LDPub = nodeHandle_.advertise<block_device::LD_data>(req.msg_name.c_str(), 10);
+  ros::Publisher LDPub = nodeHandle_.advertise<sensor_msgs::Image>(req.msg_name.c_str(), 1, true);
   pubList_.push_back(LDPub);
   nodeList_.push_back(req.node_name);
   ROS_INFO("register LD node : Connected %d nodes", cnt_);
@@ -81,6 +75,7 @@ void LoadControl::cameraCallback(const sensor_msgs::ImageConstPtr& msg) {
   ROS_DEBUG("[LoadControl] USB image received");
 
   cv_bridge::CvImagePtr cam_image;
+  cv_bridge::CvImage cvImage;
 
   try {
     cam_image = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
@@ -96,6 +91,19 @@ void LoadControl::cameraCallback(const sensor_msgs::ImageConstPtr& msg) {
     printf("\033[2J");
     printf("\033[1;1H");
     printf("\nFPS:%.1f\n", fps_);
+    if(pubList_.empty())
+      printf("[Warning]Node is Not connected\n");
+    else { 
+      cvImage.header.stamp = ros::Time::now();
+      cvImage.header.frame_id = nodeList_.at(i_%pubList_.size()).c_str();
+      cvImage.encoding = sensor_msgs::image_encodings::BGR8;
+      cvImage.image = cam_image->image;
+      pubList_.at(i_%pubList_.size()).publish(*cvImage.toImageMsg());
+      i_++;
+    }
+  }
+  else {
+    printf("Wait for image\n");
   }
   return;
 }

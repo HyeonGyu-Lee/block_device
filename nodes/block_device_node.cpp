@@ -65,7 +65,7 @@ int main(int argc, char **argv)
   string device_name, Node_name, Msg_name;
   device_name = getenv("HOSTNAME");
   Node_name = "block_device_" + device_name;
-  Msg_name = device_name + "_msg";
+  Msg_name = device_name + "_image";
    
   ros::init(argc, argv, Node_name);
   ROS_INFO("SETTING NODE : %s", Node_name.c_str());

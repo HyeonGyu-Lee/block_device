@@ -14,11 +14,11 @@
   <arg name="network_param_file"         default="$(find block_device)/config/yolov2-tiny.yaml"/>
 
   <!-- Load parameters -->
-  <rosparam command="load" ns="block_device_LD3" file="$(arg ros_param_file)"/>
-  <rosparam command="load" ns="block_device_LD3" file="$(arg network_param_file)"/>
+  <rosparam command="load" ns="block_device_LD4" file="$(arg ros_param_file)"/>
+  <rosparam command="load" ns="block_device_LD4" file="$(arg network_param_file)"/>
 
   <!-- Start darknet and ros wrapper -->
-  <node pkg="block_device" type="block_device_LD3" name="block_device_LD3" output="screen" launch-prefix="$(arg launch_prefix)">
+  <node pkg="block_device" type="block_device_LD4" name="block_device_LD4" output="screen" launch-prefix="$(arg launch_prefix)">
     <param name="weights_path"          value="$(arg yolo_weights_path)" />
     <param name="config_path"           value="$(arg yolo_config_path)" />
     <remap from="/usb_cam/image_raw"  to="$(arg image)" />
